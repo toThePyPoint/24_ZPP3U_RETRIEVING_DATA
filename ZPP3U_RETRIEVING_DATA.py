@@ -43,11 +43,17 @@ if __name__ == "__main__":
         open_one_transaction(sess, "ZPP3U")
         simple_load_variant(sess, variant_name)
 
-        for i in range(2, 500, 1):
-            element_id = partial_matching(sess, rf"lbl\[64,{str(i)}\]")
+        element_id = None
+
+        for i in range(1, 500, 1):
+
+            if not element_id:
+                element_id = partial_matching(sess, rf"lbl\[64,{str(i-1)}\]")
+
             if element_id:
-                # str.replace(element_id, f',{i-1}]')
+                element_id = str.replace(element_id, f',{i-1}]', f',{i}]')
                 # sess.findById(element_id).setFocus()
+                # '/app/con[0]/ses[2]/wnd[0]/usr/lbl[94,18]'
                 helper_field_id = partial_matching(sess, rf"lbl\[94,{str(i)}\]")
                 delayed_btn_id = element_id
                 if helper_field_id:
