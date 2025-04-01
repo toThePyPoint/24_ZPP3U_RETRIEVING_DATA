@@ -99,6 +99,7 @@ if __name__ == "__main__":
 
         # Copy data to clipboard
         pyperclip.copy(clipboard_data)
+        show_message("Dane skopiowane do schowka!")
 
     except Exception as e:
         print(e)
