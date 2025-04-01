@@ -17,7 +17,8 @@ from gui_manager import show_message
 
 if __name__ == "__main__":
 
-    variant_name = "REP_LU_KPI_ALL"
+    # variant_name = "REP_LU_KPI_ALL"
+    variant_name = sys.argv[1]
 
     BASE_PATH = Path(r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\03_ZPP3U_RETRIEVING_DATA")
     ERROR_LOG_PATH = BASE_PATH / "error.log"
@@ -41,7 +42,10 @@ if __name__ == "__main__":
     try:
         sess, tr, nu = get_last_session(max_num_of_sessions=6)
         open_one_transaction(sess, "ZPP3U")
-        simple_load_variant(sess, variant_name)
+        simple_load_variant(sess, variant_name, True)
+        # Pause to select date
+        show_message("Wybierz daty w transakcji ZPP3U i kliknij 'OK'.")
+        sess.findById("wnd[0]").sendVKey(8)
 
         element_id = None
 
