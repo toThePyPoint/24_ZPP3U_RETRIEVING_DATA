@@ -93,7 +93,7 @@ if __name__ == "__main__":
         df = pd.DataFrame(result_dict)
 
         # Convert DataFrame to clipboard-friendly format
-        clipboard_data = df.to_csv(sep='\t', index=False, header=True)
+        clipboard_data = df.to_csv(sep='\t', index=False, header=False)
 
         # Copy data to clipboard
         pyperclip.copy(clipboard_data)
