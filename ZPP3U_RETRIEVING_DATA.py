@@ -5,12 +5,13 @@ import ctypes
 from datetime import datetime
 from pathlib import Path
 import logging
+import pyperclip
 
 import pandas as pd
 
 from sap_connection import get_last_session
 from sap_functions import open_one_transaction, simple_load_variant
-from sap_transactions import partial_matching
+from sap_transactions import partial_matching, zpp3u_va03_get_data
 from gui_manager import show_message
 
 
@@ -42,10 +43,10 @@ if __name__ == "__main__":
         open_one_transaction(sess, "ZPP3U")
         simple_load_variant(sess, variant_name)
 
-        for i in range(1, 500, 1):
-            # print(sess.findById(f"wnd[0]/usr/lbl[64,{str(i)}]").text)
+        for i in range(2, 500, 1):
             element_id = partial_matching(sess, rf"lbl\[64,{str(i)}\]")
             if element_id:
+                # str.replace(element_id, f',{i-1}]')
                 # sess.findById(element_id).setFocus()
                 helper_field_id = partial_matching(sess, rf"lbl\[94,{str(i)}\]")
                 delayed_btn_id = element_id
@@ -59,8 +60,35 @@ if __name__ == "__main__":
         if num_of_delayed_positions > 0:
             sess.findById(delayed_btn_id).setFocus()
             sess.findById("wnd[0]").sendVKey(2)
+            time.sleep(2)
         else:
             show_message("There is no data.")
+
+        result_dict = zpp3u_va03_get_data(sess)
+        df = pd.DataFrame(result_dict)
+        df['Description(PL)'] = ""
+        df['Description(EN)'] = ""
+        df['products_group'] = ""
+        df['quantity_of_positions'] = 1
+
+        df["doc_date"] = pd.to_datetime(df["doc_date"], format="%d.%m.%Y").dt.strftime("%Y-%m-%d")
+        df = df[["doc_date", "customer_order", "quantity_of_positions", "Description(PL)", "Description(EN)", "products_group", "creator"]]
+
+        df_gr = df.groupby('customer_order')['quantity_of_positions'].sum()
+        df_gr = df_gr.reset_index()
+
+        df = df.drop_duplicates(subset=['customer_order'], keep='last')
+        df = df.merge(df_gr, on='customer_order', how='left')
+        df = df.drop(columns=['quantity_of_positions_x'])
+        df.rename(columns={'quantity_of_positions_y': 'quantity_of_positions_sum'}, inplace=True)
+        df = df[['doc_date', 'customer_order', 'quantity_of_positions_sum', 'Description(PL)', 'Description(EN)',
+                 'products_group', 'creator']]
+
+        # Convert DataFrame to clipboard-friendly format
+        clipboard_data = df.to_csv(sep='\t', index=False, header=False)
+
+        # Copy data to clipboard
+        pyperclip.copy(clipboard_data)
 
     except Exception as e:
         print(e)

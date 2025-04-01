@@ -211,16 +211,17 @@ def cohv_mass_processing(session, type_of_operation):
     session.findById("wnd[1]/tbar[0]/btn[8]").press()
 
 
-def partial_matching(sap_session, id_element_tag, id_root_pattern=None):
+def partial_matching(sap_session, id_element_tag, id_root_pattern=None, id_root="wnd[0]/usr"):
     """
     Recursively searches for an SAP GUI element within a container using a flexible root ID pattern.
 
+    :param id_root:
     :param sap_session: Active SAP GUI session object.
     :param id_root_pattern: Regex pattern to match the root ID (e.g., "wnd[0]/usr/ssubSUB_MAIN_CARRIER:SAPLMIGO:\\d+").
     :param id_element_tag: The unique part of the element ID to search for (e.g., "txtGOITEM-ERFMG").
     :return: The full ID of the matched element if found, otherwise None.
     """
-    id_root = "wnd[0]/usr"
+
     try:
         # root_container = sap_session.findById(id_root)
 
@@ -885,3 +886,31 @@ def zkbp1_copy_sap_grid_to_clipboard(session, columns):
         return f"Exception: {str(e)}"
 
     return f"{len(extracted_data)} rows copied from ZKBP1 transaction."
+
+
+def zpp3u_va03_get_data(session):
+    retrieved_data = dict()
+
+    table = session.findById("wnd[1]/usr")
+
+    for i in range(6, 10_000, 5):
+        ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
+        creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
+        date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
+
+        if ord_field_id and creator_field_id and date_field_id:
+            # Get into VA03
+            customer_ord_num = session.findById(ord_field_id).text
+            creator = session.findById(creator_field_id).text
+            doc_date = session.findById(date_field_id).text
+
+            retrieved_data.setdefault("customer_order", []).append(customer_ord_num)
+            retrieved_data.setdefault("creator", []).append(creator)
+            retrieved_data.setdefault("doc_date", []).append(doc_date)
+
+            table.verticalScrollbar.position = i - 1
+
+        else:
+            break
+
+    return retrieved_data
