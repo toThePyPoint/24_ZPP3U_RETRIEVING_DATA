@@ -11,8 +11,9 @@ import pandas as pd
 
 from sap_connection import get_last_session
 from sap_functions import open_one_transaction, simple_load_variant
-from sap_transactions import partial_matching, zpp3u_va03_get_data
-from gui_manager import show_message
+from sap_transactions import partial_matching
+from gui_manager import show_message, OptionSelector
+from other_functions import get_last_n_working_days
 
 if __name__ == "__main__":
 
@@ -48,7 +49,10 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
-    # TODO: Implement date selection
+    # Implement date selection
+    selection_dates = get_last_n_working_days(12)
+    selector = OptionSelector(selection_dates, "Select a date.")
+    users_date = selector.show()
 
     try:
         sess, tr, nu = get_last_session(max_num_of_sessions=6)
@@ -57,7 +61,9 @@ if __name__ == "__main__":
             total_sum_btn_id = None
             open_one_transaction(sess, "ZPP3U")
             simple_load_variant(sess, variant_name, True)
-            # TODO: Implement dates insertion
+            # Implement dates insertion
+            sess.findById("wnd[0]/usr/ctxtSO_BUDAT-LOW").text = users_date
+            # sess.findById("wnd[0]/usr/ctxtSO_BUDAT-HIGH").text = users_date
             sess.findById("wnd[0]").sendVKey(8)
 
             sys_msg_id = partial_matching(sess, rf"lbl\[0,{str(6)}\]")

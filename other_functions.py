@@ -5,7 +5,8 @@ import logging
 
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, Alignment
-from datetime import datetime
+from datetime import datetime, timedelta
+import numpy as np
 
 
 def close_excel_file(file_name):
@@ -215,3 +216,24 @@ def split_dataframe(df, chunk_size):
     :return: List of DataFrame chunks
     """
     return [df.iloc[i:i + chunk_size] for i in range(0, len(df), chunk_size)]
+
+
+def get_last_n_working_days(n):
+    """
+    :param n: number of working days
+    :return:
+    """
+    # Get today's date
+    today = datetime.today().date()
+
+    # Generate the last 15 working days (excluding weekends)
+    working_days = [today - timedelta(days=i) for i in range(n*2) if
+                    np.is_busday((today - timedelta(days=i)).strftime('%Y-%m-%d'))]
+
+    # Keep only the last 15 working days
+    last_15_working_days = working_days[:n]
+
+    # Format the dates as 'dd.mm.yyyy'
+    formatted_dates = [date.strftime('%d.%m.%Y') for date in last_15_working_days]
+
+    return formatted_dates

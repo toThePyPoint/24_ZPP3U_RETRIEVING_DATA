@@ -24,7 +24,7 @@ class OptionSelector:
         # Create the main window
         self.root = tk.Tk()
         self.root.title(self.title)
-        self.root.geometry("300x200")
+        self.root.geometry("300x500")
 
         # Create a StringVar to hold the user's choice
         self.option_var = tk.StringVar(value=self.options[0])  # Default selection
