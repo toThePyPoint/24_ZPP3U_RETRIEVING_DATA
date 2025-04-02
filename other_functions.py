@@ -227,7 +227,7 @@ def get_last_n_working_days(n):
     today = datetime.today().date()
 
     # Generate the last 15 working days (excluding weekends)
-    working_days = [today - timedelta(days=i) for i in range(n*2) if
+    working_days = [today - timedelta(days=i) for i in range(1, n*2) if
                     np.is_busday((today - timedelta(days=i)).strftime('%Y-%m-%d'))]
 
     # Keep only the last 15 working days
