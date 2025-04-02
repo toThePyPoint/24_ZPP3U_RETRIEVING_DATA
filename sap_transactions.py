@@ -888,18 +888,27 @@ def zkbp1_copy_sap_grid_to_clipboard(session, columns):
     return f"{len(extracted_data)} rows copied from ZKBP1 transaction."
 
 
-def zpp3u_va03_get_data(session):
+def zpp3u_va03_get_data(session, scrolling=True):
+    """
+    :param session: SAP session
+    :param scrolling: vertical scrolling is the case only for number of delayed positions greater than 5
+    :return:
+    """
     retrieved_data = dict()
 
     table = session.findById("wnd[1]/usr")
 
     for i in range(6, 10_000, 5):
-        ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
-        creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
-        date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
+        if scrolling:
+            ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
+            creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
+            date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
+        else:
+            ord_field_id = partial_matching(session, rf"lbl\[0,{i}\]", id_root="wnd[1]/usr")
+            creator_field_id = partial_matching(session, rf"lbl\[26,{i+1}\]", id_root="wnd[1]/usr")
+            date_field_id = partial_matching(session, rf"lbl\[50,{i+3}\]", id_root="wnd[1]/usr")
 
         if ord_field_id and creator_field_id and date_field_id:
-            # Get into VA03
             customer_ord_num = session.findById(ord_field_id).text
             creator = session.findById(creator_field_id).text
             doc_date = session.findById(date_field_id).text
@@ -908,7 +917,8 @@ def zpp3u_va03_get_data(session):
             retrieved_data.setdefault("creator", []).append(creator)
             retrieved_data.setdefault("doc_date", []).append(doc_date)
 
-            table.verticalScrollbar.position = i - 1
+            if scrolling:
+                table.verticalScrollbar.position = i - 1
 
         else:
             break

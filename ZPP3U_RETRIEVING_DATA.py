@@ -17,7 +17,7 @@ from gui_manager import show_message
 
 if __name__ == "__main__":
 
-    # variant_name = "REP_LU_KPI_ALL"
+    # variant_name = "REP_CZ_KPI_CZ"
     variant_name = sys.argv[1]
 
     BASE_PATH = Path(r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\03_ZPP3U_RETRIEVING_DATA")
@@ -74,7 +74,11 @@ if __name__ == "__main__":
         else:
             show_message("There is no data.")
 
-        result_dict = zpp3u_va03_get_data(sess)
+        if num_of_delayed_positions >= 5:
+            zpp3u_scrolling = True
+        else:
+            zpp3u_scrolling = False
+        result_dict = zpp3u_va03_get_data(sess, zpp3u_scrolling)
         df = pd.DataFrame(result_dict)
         df['Description(PL)'] = ""
         df['Description(EN)'] = ""
