@@ -910,11 +910,17 @@ def zpp3u_va03_get_data(session, scrolling=True):
 
         if ord_field_id and creator_field_id and date_field_id:
             customer_ord_num = session.findById(ord_field_id).text
-            creator = session.findById(creator_field_id).text
+            # creator_zpp3u = session.findById(creator_field_id).text
             doc_date = session.findById(date_field_id).text
 
+            # get creator from va03
+            session.findById(ord_field_id).setFocus()
+            session.findById("wnd[1]").sendVKey(2)
+            creator_va03 = va03_get_name_of_creator(session)
+            session.findById("wnd[0]/tbar[0]/btn[3]").press()
+
             retrieved_data.setdefault("customer_order", []).append(customer_ord_num)
-            retrieved_data.setdefault("creator", []).append(creator)
+            retrieved_data.setdefault("creator", []).append(creator_va03)
             retrieved_data.setdefault("doc_date", []).append(doc_date)
 
             if scrolling:
@@ -924,3 +930,10 @@ def zpp3u_va03_get_data(session, scrolling=True):
             break
 
     return retrieved_data
+
+
+def va03_get_name_of_creator(session):
+    session.findById("wnd[0]/usr/subSUBSCREEN_HEADER:SAPMV45A:4021/btnBT_HEAD").press()
+    creator = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4301/txtVBAK-ERNAM").text
+    session.findById("wnd[0]/tbar[0]/btn[3]").press()
+    return creator
