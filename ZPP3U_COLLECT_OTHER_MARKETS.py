@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
                 # Get to delayed orders list
                 total_sum_of_positions = sess.findById(total_sum_btn_id).text
-                total_sum_of_positions = int(total_sum_of_positions.strip())
+                total_sum_of_positions = int(str(total_sum_of_positions).replace(".", "").strip())
 
                 result_dict.setdefault(variant_name, []).append(total_sum_of_positions)
 
