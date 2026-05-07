@@ -17,18 +17,32 @@ from other_functions import get_last_n_working_days
 
 if __name__ == "__main__":
 
-    variants_list = [
-        "REP_LU_KPI_ALL",
-        "REP_LU_KPI_AT",
-        "REP_LU_KPI_BNL",
-        "REP_LU_KPI_CHZ",
-        "REP_LU_KPI_CZ",
-        "REP_LU_KPI_DE",
-        "REP_LU_KPI_FR",
-        "REP_LU_KPI_HU",
-        "REP_LU_KPI_IT",
-        "REP_LU_KPI_PL"
-    ]
+    if sys.argv[1] == 'PL':
+        variants_list = [
+            "REP_LU_KPI_ALL",
+            "REP_LU_KPI_AT",
+            "REP_LU_KPI_BNL",
+            "REP_LU_KPI_CHZ",
+            "REP_LU_KPI_CZ",
+            "REP_LU_KPI_DE",
+            "REP_LU_KPI_FR",
+            "REP_LU_KPI_HU",
+            "REP_LU_KPI_IT",
+            "REP_LU_KPI_PL"
+        ]
+    elif sys.argv[1] == 'BM':
+        variants_list = [
+            "REP_BM_KPI_ALL",
+            "REP_BM_KPI_AT",
+            "REP_BM_KPI_BNL",
+            "REP_BM_KPI_CHZ",
+            "REP_BM_KPI_CZ",
+            "REP_BM_KPI_DE",
+            "REP_BM_KPI_FR",
+            "REP_BM_KPI_HU",
+            "REP_BM_KPI_IT",
+            "REP_BM_KPI_PL"
+        ]
 
     result_dict = dict()
 
