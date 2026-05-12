@@ -17,7 +17,7 @@ from gui_manager import show_message
 
 if __name__ == "__main__":
 
-    # variant_name = "REP_BM_KPI_ALL"
+    # variant_name = "REP_LU_KPI_ALL"
     variant_name = sys.argv[1]
 
     BASE_PATH = Path(r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\03_ZPP3U_RETRIEVING_DATA")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             zpp3u_scrolling = True
         else:
             zpp3u_scrolling = False
-        result_dict = zpp3u_va03_get_data(sess, zpp3u_scrolling)
+        result_dict = zpp3u_va03_get_data(sess, zpp3u_scrolling, num_of_delayed_positions)
         df = pd.DataFrame(result_dict)
         df['Description(PL)'] = ""
         df['Description(EN)'] = ""
@@ -86,17 +86,16 @@ if __name__ == "__main__":
         df['quantity_of_positions'] = 1
 
         df["doc_date"] = pd.to_datetime(df["doc_date"], format="%d.%m.%Y").dt.strftime("%Y-%m-%d")
-        df = df[["doc_date", "customer_order", "quantity_of_positions", "Description(PL)", "Description(EN)", "products_group", "creator"]]
+        df = df[["doc_date", "customer_order", "quantity_of_positions", "Description(PL)", "Description(EN)", "products_group", "creator", "route"]]
 
-        df_gr = df.groupby('customer_order')['quantity_of_positions'].sum()
-        df_gr = df_gr.reset_index()
+        df_gr = df.groupby(['customer_order', 'route'])['quantity_of_positions'].sum().reset_index()
 
-        df = df.drop_duplicates(subset=['customer_order'], keep='last')
-        df = df.merge(df_gr, on='customer_order', how='left')
+        df = df.drop_duplicates(subset=['customer_order', 'route'], keep='last')
+        df = df.merge(df_gr, on=['customer_order', 'route'], how='left')
         df = df.drop(columns=['quantity_of_positions_x'])
         df.rename(columns={'quantity_of_positions_y': 'quantity_of_positions_sum'}, inplace=True)
         df = df[['doc_date', 'customer_order', 'quantity_of_positions_sum', 'Description(PL)', 'Description(EN)',
-                 'products_group', 'creator']]
+                 'products_group', 'creator', 'route']]
 
         # Convert DataFrame to clipboard-friendly format
         clipboard_data = df.to_csv(sep='\t', index=False, header=False)

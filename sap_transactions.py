@@ -888,52 +888,74 @@ def zkbp1_copy_sap_grid_to_clipboard(session, columns):
     return f"{len(extracted_data)} rows copied from ZKBP1 transaction."
 
 
-def zpp3u_va03_get_data(session, scrolling=True):
+def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
     """
     :param session: SAP session
     :param scrolling: vertical scrolling is the case only for number of delayed positions greater than 5
     :return:
     """
     retrieved_data = dict()
+    total_matching_time = 0
 
     table = session.findById("wnd[1]/usr")
 
-    for i in range(6, 10_000, 5):
+    for i in range(6, int(num_of_positions) * 5 + 5, 5):
+        start_matching = time.perf_counter()
+
         if scrolling:
-            ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
-            creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
-            date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
+            # ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
+            # pos_field_id = partial_matching(session, rf"lbl\[12,{6}\]", id_root="wnd[1]/usr")
+            # creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
+            # date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
+            ord_field_id = f"wnd[1]/usr/lbl[0,6]"
+            pos_field_id = f"wnd[1]/usr/lbl[12,6]"
+            creator_field_id = f"wnd[1]/usr/lbl[26,7]"
+            date_field_id = f"wnd[1]/usr/lbl[50,9]"
         else:
             ord_field_id = partial_matching(session, rf"lbl\[0,{i}\]", id_root="wnd[1]/usr")
+            pos_field_id = partial_matching(session, rf"lbl\[12,{i}\]", id_root="wnd[1]/usr")
             creator_field_id = partial_matching(session, rf"lbl\[26,{i+1}\]", id_root="wnd[1]/usr")
             date_field_id = partial_matching(session, rf"lbl\[50,{i+3}\]", id_root="wnd[1]/usr")
+
+        # Zakończenie pomiaru i dodanie do sumy
+        end_matching = time.perf_counter()
+        total_matching_time += (end_matching - start_matching)
 
         if ord_field_id and creator_field_id and date_field_id:
             customer_ord_num = session.findById(ord_field_id).text
             # creator_zpp3u = session.findById(creator_field_id).text
             doc_date = session.findById(date_field_id).text
+            customer_ord_pos = session.findById(pos_field_id).text
 
             # get creator from va03
             session.findById(ord_field_id).setFocus()
             session.findById("wnd[1]").sendVKey(2)
-            creator_va03 = va03_get_name_of_creator(session)
+            creator_va03, route = va03_get_name_of_creator_and_route(session,customer_ord_pos)
             session.findById("wnd[0]/tbar[0]/btn[3]").press()
 
             retrieved_data.setdefault("customer_order", []).append(customer_ord_num)
             retrieved_data.setdefault("creator", []).append(creator_va03)
             retrieved_data.setdefault("doc_date", []).append(doc_date)
+            retrieved_data.setdefault("route", []).append(route)
 
             if scrolling:
                 table.verticalScrollbar.position = i - 1
 
         else:
             break
-
+    print(f"Całkowity czas przypisywania ID (partial_matching): {total_matching_time:.4f} sekund")
     return retrieved_data
 
 
-def va03_get_name_of_creator(session):
+def va03_get_name_of_creator_and_route(session, pos_num):
+    session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06").select()
+    session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06/ssubSUBSCREEN_BODY:SAPMV45A:4403/subSUBSCREEN_TC:SAPMV45A:4921/subSUBSCREEN_BUTTONS:SAPMV45A:4050/btnBT_POPO").press()
+    session.findById("wnd[1]/usr/txtRV45A-POSNR").text = str(pos_num)
+    session.findById("wnd[1]").sendVKey(0)
+    route = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06/ssubSUBSCREEN_BODY:SAPMV45A:4403/subSUBSCREEN_TC:SAPMV45A:4921/tblSAPMV45ATCTRL_UEIN_VERSAND/ctxtVBAP-ROUTE[10,0]").text
+
     session.findById("wnd[0]/usr/subSUBSCREEN_HEADER:SAPMV45A:4021/btnBT_HEAD").press()
     creator = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4301/txtVBAK-ERNAM").text
     session.findById("wnd[0]/tbar[0]/btn[3]").press()
-    return creator
+
+    return creator, route
