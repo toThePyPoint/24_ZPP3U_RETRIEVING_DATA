@@ -2,7 +2,6 @@ import re
 import time
 
 import pyperclip
-import pywintypes
 from sap_functions import clear_sap_warnings, get_sap_message
 
 
@@ -948,14 +947,42 @@ def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
 
 
 def va03_get_name_of_creator_and_route(session, pos_num):
-    session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06").select()
-    session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06/ssubSUBSCREEN_BODY:SAPMV45A:4403/subSUBSCREEN_TC:SAPMV45A:4921/subSUBSCREEN_BUTTONS:SAPMV45A:4050/btnBT_POPO").press()
-    session.findById("wnd[1]/usr/txtRV45A-POSNR").text = str(pos_num)
-    session.findById("wnd[1]").sendVKey(0)
-    route = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_OVERVIEW/tabpT\06/ssubSUBSCREEN_BODY:SAPMV45A:4403/subSUBSCREEN_TC:SAPMV45A:4921/tblSAPMV45ATCTRL_UEIN_VERSAND/ctxtVBAP-ROUTE[10,0]").text
+    # Go to the environment/status display
+    session.findById("wnd[0]/tbar[1]/btn[5]").press()
 
+    shell = session.findById("wnd[0]/usr/shell/shellcont[1]/shell[1]")
+    column_name = "&Hierarchy"
+    pattern = r"Transport\s+(\d+)"
+
+    # Get all actual keys existing in the tree
+    all_nodes = shell.GetAllNodeKeys()
+
+    route = "No route found"
+
+    # Loop through the actual keys provided by SAP
+    for node_key in all_nodes:
+        try:
+            item_text = shell.GetItemText(node_key, column_name)
+
+            # Check if "Transport" is in the text
+            match = re.search(pattern, item_text)
+            if match:
+                route = match.group(1)
+                print(f"Found Transport Number: {route}")
+                break
+        except:
+            # Some nodes might not have text in that specific column; skip them
+            continue
+
+    # Back out to the main screen (Green arrow or Back)
+    session.findById("wnd[0]/tbar[0]/btn[15]").press()
+
+    # Get Creator Name logic
     session.findById("wnd[0]/usr/subSUBSCREEN_HEADER:SAPMV45A:4021/btnBT_HEAD").press()
-    creator = session.findById(r"wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4301/txtVBAK-ERNAM").text
+    creator = session.findById(
+        r"wnd[0]/usr/tabsTAXI_TABSTRIP_HEAD/tabpT\01/ssubSUBSCREEN_BODY:SAPMV45A:4301/txtVBAK-ERNAM").text
+
+    # Back to initial screen
     session.findById("wnd[0]/tbar[0]/btn[3]").press()
 
     return creator, route
