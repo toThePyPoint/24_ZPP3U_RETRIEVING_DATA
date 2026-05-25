@@ -887,6 +887,14 @@ def zkbp1_copy_sap_grid_to_clipboard(session, columns):
     return f"{len(extracted_data)} rows copied from ZKBP1 transaction."
 
 
+def sap_element_exists(session, element_id):
+    try:
+        session.findById(element_id)
+        return True
+    except:
+        return False
+
+
 def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
     """
     :param session: SAP session
@@ -929,6 +937,13 @@ def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
             # get creator from va03
             session.findById(ord_field_id).setFocus()
             session.findById("wnd[1]").sendVKey(2)
+
+            # Here information about blockade appears
+            popup_button = "wnd[1]/tbar[0]/btn[0]"
+
+            if sap_element_exists(session, popup_button):
+                session.findById(popup_button).press()
+
             creator_va03, route = va03_get_name_of_creator_and_route(session,customer_ord_pos)
             session.findById("wnd[0]/tbar[0]/btn[3]").press()
 

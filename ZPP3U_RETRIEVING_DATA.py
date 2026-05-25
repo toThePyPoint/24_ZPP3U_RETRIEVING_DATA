@@ -17,8 +17,8 @@ from gui_manager import show_message
 
 if __name__ == "__main__":
 
-    variant_name = "REP_LU_KPI_ALL"
-    # variant_name = sys.argv[1]
+    # variant_name = "REP_LU_KPI_ALL"
+    variant_name = sys.argv[1]
 
     BASE_PATH = Path(r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\03_ZPP3U_RETRIEVING_DATA")
     ERROR_LOG_PATH = BASE_PATH / "error.log"
