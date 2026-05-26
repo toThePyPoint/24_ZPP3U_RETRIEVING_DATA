@@ -14,11 +14,14 @@ from sap_functions import open_one_transaction, simple_load_variant
 from sap_transactions import partial_matching, zpp3u_va03_get_data
 from gui_manager import show_message
 
+from sap_conn import get_conn
+from sap_rtab import rfc_read_table
+
 
 if __name__ == "__main__":
 
-    # variant_name = "REP_LU_KPI_ALL"
-    variant_name = sys.argv[1]
+    variant_name = "REP_LU_KPI_ALL"
+    # variant_name = sys.argv[1]
 
     BASE_PATH = Path(r"P:\Technisch\PLANY PRODUKCJI\PLANIŚCI\PP_TOOLS_TEMP_FILES\03_ZPP3U_RETRIEVING_DATA")
     ERROR_LOG_PATH = BASE_PATH / "error.log"
@@ -85,8 +88,68 @@ if __name__ == "__main__":
         df['products_group'] = ""
         df['quantity_of_positions'] = 1
 
+        # TODO: Implement the logic for retriving author and transport number with PyRFC
+        customer_orders_list = df['customer_order'].str.strip().str.zfill(10).to_list()
+
+        customer_ord_filter_vbeln = " OR ".join(
+            [f"VBELN = '{num}'" for num in customer_orders_list]
+        )
+
+        customer_ord_filter_vbelv = " OR ".join(
+            [f"VBELV = '{num}'" for num in customer_orders_list]
+        )
+
+        # TODO: Implement the logic if filter is empty (there is no data)
+
+        print(customer_ord_filter_vbeln)
+
+        with get_conn("K11") as conn:
+
+            vbak = rfc_read_table(
+                conn=conn,
+                table="VBAK",
+                fields=[
+                    "VBELN",
+                    "ERNAM",
+                ],
+                where=f"""
+                    {customer_ord_filter_vbeln}
+                """,
+                # rowcount=1500
+            )
+
+            vbak_df = pd.DataFrame(vbak)
+
+            vbfa = rfc_read_table(
+                conn=conn,
+                table="VBFA",
+                fields=[
+                    "VBELV",  # previous doc (SO)
+                    "POSNV",  # pos SO
+                    "VBELN",  # next doc
+                    "POSNN",  # next doc pos
+                    "VBTYP_N",  # doc type
+                ],
+                where=f"""
+                    {customer_ord_filter_vbelv}
+                """
+            )
+
+            vbfa_df = pd.DataFrame(vbfa)
+            # delivery_df = vbfa_df
+            delivery_df = vbfa_df.loc[
+                vbfa_df["VBTYP_N"] == "J"
+                ]
+
+        df.to_excel(fr"{BASE_PATH}\main_df.xlsx", index=False)
+        vbak_df.to_excel(fr"{BASE_PATH}\vbak_df.xlsx", index=False)
+        delivery_df.to_excel(fr"{BASE_PATH}\delivery_df.xlsx", index=False)
+
+        print(vbak_df)
+        print(delivery_df)
+
         df["doc_date"] = pd.to_datetime(df["doc_date"], format="%d.%m.%Y").dt.strftime("%Y-%m-%d")
-        df = df[["doc_date", "customer_order", "quantity_of_positions", "Description(PL)", "Description(EN)", "products_group", "creator", "route"]]
+        df = df[["doc_date", "customer_order", "customer_order_position", "quantity_of_positions", "Description(PL)", "Description(EN)", "products_group", "creator", "route"]]
 
         df_gr = df.groupby(['customer_order', 'route'])['quantity_of_positions'].sum().reset_index()
 

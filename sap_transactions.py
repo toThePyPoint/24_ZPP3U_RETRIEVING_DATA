@@ -750,10 +750,6 @@ def me57_convert_purchase_requisitions(session, skip_stock_requisitions=True):
     session.findById("wnd[0]/usr/lbl[11,9]").caretPosition = 2
     session.findById("wnd[0]").sendVKey(2)
     session.findById("wnd[1]/tbar[0]/btn[0]").press()
-    # session.findById(
-    #     "wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211/btnMEPO1211-STATUSICON[0,11]").setFocus()
-    # session.findById(
-    #     "wnd[0]/usr/subSUB0:SAPLMEGUI:0015/subSUB2:SAPLMEVIEWS:1100/subSUB2:SAPLMEVIEWS:1200/subSUB1:SAPLMEGUI:1211/tblSAPLMEGUITC_1211/btnMEPO1211-STATUSICON[0,11]").press()
 
     if skip_stock_requisitions:
         # Dynamic SAP GUI element IDs
@@ -793,8 +789,6 @@ def me57_convert_purchase_requisitions(session, skip_stock_requisitions=True):
                                             r"wnd\[0\]/usr/subSUB0:SAPLMEGUI:\d+/subSUB2:SAPLMEVIEWS:\d+/subSUB2:SAPLMEVIEWS:\d+/subSUB1:SAPLMEGUI:\d+")
                 session.findById(table_id).verticalScrollbar.position += 1
 
-                # for i in range(visible_rows):
-                #     clear_sap_warnings(session)
                 # Get table ID once again as it's changed after scrolling (?)
                 table_id = partial_matching(session, "tblSAPLMEGUITC_1211",
                                             r"wnd\[0\]/usr/subSUB0:SAPLMEGUI:\d+/subSUB2:SAPLMEVIEWS:\d+/subSUB2:SAPLMEVIEWS:\d+/subSUB1:SAPLMEGUI:\d+")
@@ -910,10 +904,6 @@ def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
         start_matching = time.perf_counter()
 
         if scrolling:
-            # ord_field_id = partial_matching(session, rf"lbl\[0,{6}\]", id_root="wnd[1]/usr")
-            # pos_field_id = partial_matching(session, rf"lbl\[12,{6}\]", id_root="wnd[1]/usr")
-            # creator_field_id = partial_matching(session, rf"lbl\[26,{7}\]", id_root="wnd[1]/usr")
-            # date_field_id = partial_matching(session, rf"lbl\[50,{9}\]", id_root="wnd[1]/usr")
             ord_field_id = f"wnd[1]/usr/lbl[0,6]"
             pos_field_id = f"wnd[1]/usr/lbl[12,6]"
             creator_field_id = f"wnd[1]/usr/lbl[26,7]"
@@ -930,13 +920,8 @@ def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
 
         if ord_field_id and creator_field_id and date_field_id:
             customer_ord_num = session.findById(ord_field_id).text
-            # creator_zpp3u = session.findById(creator_field_id).text
             doc_date = session.findById(date_field_id).text
             customer_ord_pos = session.findById(pos_field_id).text
-
-            # get creator from va03
-            session.findById(ord_field_id).setFocus()
-            session.findById("wnd[1]").sendVKey(2)
 
             # Here information about blockade appears
             popup_button = "wnd[1]/tbar[0]/btn[0]"
@@ -944,13 +929,9 @@ def zpp3u_va03_get_data(session, scrolling=True, num_of_positions=2000):
             if sap_element_exists(session, popup_button):
                 session.findById(popup_button).press()
 
-            creator_va03, route = va03_get_name_of_creator_and_route(session,customer_ord_pos)
-            session.findById("wnd[0]/tbar[0]/btn[3]").press()
-
             retrieved_data.setdefault("customer_order", []).append(customer_ord_num)
-            retrieved_data.setdefault("creator", []).append(creator_va03)
+            retrieved_data.setdefault("customer_order_position", []).append(customer_ord_pos)
             retrieved_data.setdefault("doc_date", []).append(doc_date)
-            retrieved_data.setdefault("route", []).append(route)
 
             if scrolling:
                 table.verticalScrollbar.position = i - 1
