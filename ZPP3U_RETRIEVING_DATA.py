@@ -31,6 +31,8 @@ if __name__ == "__main__":
 
     delayed_btn_id = None
 
+    start_time = time.time()
+
     # Hide console window
     if sys.platform == "win32":
         kernel32 = ctypes.windll.kernel32
@@ -96,55 +98,58 @@ if __name__ == "__main__":
         # TODO: Implement the logic for retriving author and transport number with PyRFC
         customer_orders_list = df['customer_order'].to_list()
 
-        customer_ord_filter_vbeln = " OR ".join(
-            [f"VBELN = '{num}'" for num in customer_orders_list]
-        )
-
-        customer_ord_filter_vbelv = " OR ".join(
-            [f"VBELV = '{num}'" for num in customer_orders_list]
-        )
-
-        # TODO: Implement the logic if filter is empty (there is no data)
-
-        print(customer_ord_filter_vbeln)
-
-        with get_conn(SAP_SYSTEM) as conn:
-
-            vbak = rfc_read_table(
-                conn=conn,
-                table="VBAK",
-                fields=[
-                    "VBELN", # customer order number
-                    "ERNAM", # customer order author
-                ],
-                where=f"""
-                    {customer_ord_filter_vbeln}
-                """,
-                # rowcount=1500
+        if customer_orders_list:
+            customer_ord_filter_vbeln = " OR ".join(
+                [f"VBELN = '{num}'" for num in customer_orders_list]
             )
 
-            vbak_df = pd.DataFrame(vbak)
-
-            vbfa = rfc_read_table(
-                conn=conn,
-                table="VBFA",
-                fields=[
-                    "VBELV",  # previous doc (SO)
-                    "POSNV",  # pos SO
-                    "VBELN",  # next doc
-                    "POSNN",  # next doc pos
-                    "VBTYP_N",  # doc type
-                ],
-                where=f"""
-                    {customer_ord_filter_vbelv}
-                """
+            customer_ord_filter_vbelv = " OR ".join(
+                [f"VBELV = '{num}'" for num in customer_orders_list]
             )
 
-            vbfa_df = pd.DataFrame(vbfa)
-            # delivery_df = vbfa_df
-            delivery_df = vbfa_df.loc[
-                vbfa_df["VBTYP_N"] == "J"
-                ]
+            print(customer_ord_filter_vbeln)
+
+            with get_conn(SAP_SYSTEM) as conn:
+
+                vbak = rfc_read_table(
+                    conn=conn,
+                    table="VBAK",
+                    fields=[
+                        "VBELN", # customer order number
+                        "ERNAM", # customer order author
+                    ],
+                    where=f"""
+                        {customer_ord_filter_vbeln}
+                    """,
+                    # rowcount=1500
+                )
+
+                vbak_df = pd.DataFrame(vbak, columns=["VBELN", "ERNAM"])
+
+                vbfa = rfc_read_table(
+                    conn=conn,
+                    table="VBFA",
+                    fields=[
+                        "VBELV",  # previous doc (SO)
+                        "POSNV",  # pos SO
+                        "VBELN",  # next doc
+                        "POSNN",  # next doc pos
+                        "VBTYP_N",  # doc type
+                    ],
+                    where=f"""
+                        {customer_ord_filter_vbelv}
+                    """
+                )
+
+                vbfa_df = pd.DataFrame(vbfa, columns=["VBELV", "POSNV", "VBELN", "POSNN", "VBTYP_N"])
+        else:
+            vbak_df = pd.DataFrame(columns=["VBELN", "ERNAM"])
+            vbfa_df = pd.DataFrame(columns=["VBELV", "POSNV", "VBELN", "POSNN", "VBTYP_N"])
+
+        # delivery_df = vbfa_df
+        delivery_df = vbfa_df.loc[
+            vbfa_df["VBTYP_N"] == "J"
+            ]
 
         vbak_df.to_excel(fr"{BASE_PATH}\vbak_df.xlsx", index=False)
         delivery_df.to_excel(fr"{BASE_PATH}\delivery_df.xlsx", index=False)
@@ -209,6 +214,7 @@ if __name__ == "__main__":
         # Copy data to clipboard
         pyperclip.copy(clipboard_data)
         show_message("Dane skopiowane do schowka!")
+        print(f"Total time of execution: {time.time() - start_time:.2f}")
 
     except Exception as e:
         print(e)
